@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart E-Catalog & Location Finder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Plus Jakarta Sans for premium feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PapaParse for parsing Google Sheet CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .gradient-brand {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+        .gradient-dark-brand {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        .img-grid-bg {
+            background-color: #f8fafc;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        .dark .img-grid-bg {
+            background-color: #0f172a;
+            background-image: radial-gradient(#1e293b 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="gradient-brand p-2.5 rounded-2xl shadow-lg shadow-blue-500/25 text-white">
+                    <i class="fa-solid fa-boxes-stacked text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                        LOGI<span class="text-blue-600 dark:text-blue-400">CATALOG</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">Digital E-Catalog & Wayfinder</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2.5">
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition duration-200" title="Ubah Tema">
+                    <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-lg text-amber-400"></i>
+                </button>
+
+                <!-- Refresh Sync Button -->
+                <button onclick="refreshData()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 px-4 rounded-xl shadow-md shadow-blue-600/10 hover:shadow-blue-600/20 transition duration-200 flex items-center space-x-2">
+                    <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+                    <span class="hidden md:inline">Sync Google Sheet</span>
+                </button>
+                
+                <span class="hidden sm:inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 mr-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+                    Live Connected
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Hero Section Banner -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100 dark:border-slate-800 mb-6 relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 bg-blue-100/40 dark:bg-blue-900/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-72 h-72 bg-indigo-100/40 dark:bg-indigo-900/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10">
+                <span class="text-blue-600 dark:text-blue-400 font-extrabold text-xs uppercase tracking-widest bg-blue-50 dark:bg-blue-950/40 px-3.5 py-1.5 rounded-full">
+                    Sistem Penunjuk Lokasi & Bahasa Mekanik
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-4 tracking-tight">
+                    E-Catalog Bins Marunda
+                </h2>
+                <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm max-w-3xl leading-relaxed">
+                    Sistem pencarian cepat produk dan lokasi bins. Mengambil tautan foto asli secara dinamis dari <span class="font-bold text-blue-600 dark:text-blue-400">Kolom G (Picture)</span> pada Google Sheets Anda serta dilengkapi penyesuaian Bahasa Mekanik terproteksi.
+                </p>
+            </div>
+        </div>
+
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center space-x-4 transition-all duration-300">
+                <div class="p-3 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-xl">
+                    <i class="fa-solid fa-boxes-stacked text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Produk</p>
+                    <p class="text-xl font-bold text-slate-800 dark:text-white" id="stat-total">0</p>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center space-x-4 transition-all duration-300">
+                <div class="p-3 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-xl">
+                    <i class="fa-solid fa-warehouse text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Warehouses</p>
+                    <p class="text-xl font-bold text-slate-800 dark:text-white" id="stat-warehouses">0</p>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center space-x-4 transition-all duration-300">
+                <div class="p-3 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                    <i class="fa-solid fa-location-dot text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Bins Terdaftar</p>
+                    <p class="text-xl font-bold text-slate-800 dark:text-white" id="stat-bins">0</p>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center space-x-4 transition-all duration-300">
+                <div class="p-3 bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 rounded-xl">
+                    <i class="fa-solid fa-images text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Picture Drive (Col G)</p>
+                    <p class="text-xl font-bold text-slate-800 dark:text-white" id="stat-images">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Card (Positioned directly above Catalog Header) -->
+        <div class="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm mb-6 transition-all duration-300">
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-blue-500"></i> Panel Pencarian & Filter
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <!-- Text Search -->
+                <div class="relative md:col-span-5">
+                    <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-lg"></i>
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Cari Purchase Product, Warehouse, atau Bins..." 
+                        class="w-full pl-14 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-medium transition duration-200 shadow-inner"
+                    >
+                </div>
+                
+                <!-- Bahasa Mekanik Search -->
+                <div class="relative md:col-span-3">
+                    <i class="fa-solid fa-gears absolute left-5 top-1/2 -translate-y-1/2 text-blue-500 dark:text-blue-400 text-lg"></i>
+                    <input 
+                        type="text" 
+                        id="initials-input" 
+                        placeholder="Bahasa Mekanik" 
+                        class="w-full pl-14 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-bold transition duration-200 shadow-inner uppercase tracking-wider"
+                        maxlength="20"
+                    >
+                </div>
+
+                <!-- Warehouse Selector -->
+                <div class="relative md:col-span-4">
+                    <select 
+                        id="warehouse-filter" 
+                        class="w-full pl-5 pr-12 py-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 text-slate-700 dark:text-slate-200 font-medium transition duration-200 cursor-pointer appearance-none"
+                    >
+                        <option value="">Semua Warehouse</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Catalog Toolbar -->
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-4 border-t border-slate-200/40 dark:border-slate-800/40 pt-6">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center space-x-2">
+                <span>Daftar Katalog Produk</span>
+                <span class="bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 text-xs px-2.5 py-0.5 rounded-full font-bold" id="items-count">0</span>
+            </h3>
+            
+            <div class="flex items-center space-x-3">
+                <!-- Layout Toggle Buttons -->
+                <div class="bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center space-x-1 shadow-sm transition-all duration-300">
+                    <button id="grid-view-btn" onclick="setLayout('grid')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400" title="Tampilan Grid">
+                        <i class="fa-solid fa-grip"></i>
+                    </button>
+                    <button id="list-view-btn" onclick="setLayout('list')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Tampilan List">
+                        <i class="fa-solid fa-list-ul"></i>
+                    </button>
+                </div>
+                
+                <button onclick="resetFilters()" class="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <i class="fa-solid fa-filter-circle-xmark mr-1"></i>Reset Filter
+                </button>
+            </div>
+        </div>
+
+        <!-- Skeleton Loader (Shown during fetching) -->
+        <div id="skeleton-loader" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Repeating Skeleton Cards -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 animate-pulse space-y-4">
+                <div class="aspect-square bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+                <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                <div class="space-y-2">
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+                </div>
+                <div class="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 animate-pulse space-y-4 hidden sm:block">
+                <div class="aspect-square bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+                <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                <div class="space-y-2">
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+                </div>
+                <div class="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 animate-pulse space-y-4 hidden md:block">
+                <div class="aspect-square bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+                <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                <div class="space-y-2">
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+                </div>
+                <div class="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 animate-pulse space-y-4 hidden lg:block">
+                <div class="aspect-square bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+                <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                <div class="space-y-2">
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+                </div>
+                <div class="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+            </div>
+        </div>
+
+        <!-- Main Product Grid/List Output -->
+        <div id="product-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 hidden">
+            <!-- Dynamic elements will be injected here -->
+        </div>
+
+        <!-- Empty/No Results Area -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 shadow-sm transition-all">
+            <div class="bg-slate-50 dark:bg-slate-950 p-6 rounded-full text-slate-400 dark:text-slate-600 mb-4 shadow-inner">
+                <i class="fa-solid fa-magnifying-glass-minus text-4xl"></i>
+            </div>
+            <h4 class="text-xl font-bold text-slate-800 dark:text-white">Tidak ada produk ditemukan</h4>
+            <p class="text-slate-500 dark:text-slate-400 mt-2 max-w-md text-sm">Cobalah kata kunci lain, Bahasa Mekanik yang berbeda, atau reset filter pencarian Anda.</p>
+            <button onclick="resetFilters()" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-3 px-6 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition duration-200">
+                Reset Filter Pencarian
+            </button>
+        </div>
+
+        <!-- Error Loading State -->
+        <div id="error-state" class="hidden flex-col items-center justify-center text-center py-16 bg-red-50 dark:bg-red-950/20 rounded-3xl border border-red-100 dark:border-red-900/30 p-8">
+            <div class="bg-red-100 dark:bg-red-950 p-5 rounded-full text-red-600 dark:text-red-400 mb-4 shadow-inner">
+                <i class="fa-solid fa-circle-exclamation text-3xl"></i>
+            </div>
+            <h4 class="text-xl font-extrabold text-red-800 dark:text-red-400">Koneksi Spreadsheet Gagal</h4>
+            <p class="text-red-600/80 dark:text-red-400/80 mt-2 max-w-lg mx-auto text-sm leading-relaxed">
+                Aplikasi tidak dapat mengakses file spreadsheet. Pastikan hak akses Google Spreadsheet Anda di-set menjadi <span class="font-bold">"Siapa saja yang memiliki link dapat melihat" (Anyone with link can view)</span> agar data dapat disinkronisasi.
+            </p>
+            <div class="mt-8 flex flex-wrap justify-center gap-4">
+                <button onclick="refreshData()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-3 px-6 rounded-xl transition duration-200">
+                    Coba Hubungkan Kembali
+                </button>
+                <button onclick="loadMockData()" class="bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-bold py-3 px-6 rounded-xl transition duration-200">
+                    Gunakan Data Contoh (Demo)
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 mt-16 border-t border-slate-800 dark:bg-slate-950 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600/20 p-2.5 rounded-xl border border-blue-500/30">
+                        <i class="fa-solid fa-boxes-stacked text-blue-500"></i>
+                    </div>
+                    <span class="font-extrabold text-white text-lg tracking-tight">LOGI<span class="text-blue-500">CATALOG</span></span>
+                </div>
+                <div class="text-xs text-center md:text-right space-y-2">
+                    <p>© 2026 LOGICATALOG. Hak Cipta Dilindungi.</p>
+                    <p class="text-slate-500 max-w-md">E-Catalog Penunjuk Lokasi Bins Gudang dengan Auto-Direct Converter Link Google Drive.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Details Modal -->
+    <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm hidden" onclick="closeModalOnBgClick(event)">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full transform scale-95 transition-all duration-300 relative border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]">
+            <!-- Header Modal Buttons -->
+            <div class="absolute right-4 top-4 z-10 flex space-x-2">
+                <button onclick="closeModal()" class="bg-slate-900/60 hover:bg-slate-900/85 dark:bg-slate-950/60 dark:hover:bg-slate-950/85 backdrop-blur-md text-white rounded-full w-10 h-10 flex items-center justify-center transition duration-200 shadow-md">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto flex-grow">
+                <!-- Product Cover Image -->
+                <div class="relative w-full bg-slate-100 dark:bg-slate-950 flex items-center justify-center h-72 sm:h-96 img-grid-bg" id="modal-image-container">
+                    <!-- Loaded dynamically -->
+                </div>
+
+                <!-- Product Information -->
+                <div class="p-6 sm:p-8 space-y-6">
+                    <div class="space-y-1">
+                        <span class="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Purchase Product</span>
+                        <h3 id="modal-product-title" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight"></h3>
+                    </div>
+
+                    <!-- Lockable Bahasa Mekanik Section -->
+                    <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1 flex-grow">
+                            <span class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-gears text-blue-500"></i> Bahasa Mekanik
+                            </span>
+                            <input 
+                                type="text" 
+                                id="modal-bahasa-mekanik-input" 
+                                disabled 
+                                class="w-full mt-1.5 bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-black px-4 py-2.5 rounded-xl font-mono text-sm border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100/50 dark:disabled:bg-slate-950/50 disabled:opacity-80 transition duration-200 uppercase tracking-wider"
+                                placeholder="Masukkan Bahasa Mekanik..."
+                            >
+                        </div>
+                        <div class="flex items-end h-full sm:self-end">
+                            <button 
+                                id="lock-btn" 
+                                onclick="toggleLockBahasaMekanik()" 
+                                class="bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 p-3 rounded-xl transition duration-200 flex items-center justify-center gap-2 font-bold text-xs shadow-sm border border-blue-100/30 dark:border-blue-900/30 w-full sm:w-auto px-4"
+                                title="Klik untuk membuka kunci dan edit"
+                            >
+                                <i id="lock-icon" class="fa-solid fa-lock text-sm"></i>
+                                <span id="lock-text">Kunci Aktif</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Info Card 1: Warehouse -->
+                        <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <div class="bg-blue-100 dark:bg-blue-950 p-2 rounded-xl text-blue-600 dark:text-blue-400">
+                                    <i class="fa-solid fa-warehouse text-sm"></i>
+                                </div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Warehouse</span>
+                            </div>
+                            <p id="modal-warehouse" class="text-base font-extrabold text-slate-800 dark:text-white"></p>
+                        </div>
+
+                        <!-- Info Card 2: Bins Location Marunda -->
+                        <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <div class="bg-emerald-100 dark:bg-emerald-950 p-2 rounded-xl text-emerald-600 dark:text-emerald-400">
+                                    <i class="fa-solid fa-location-dot text-sm"></i>
+                                </div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Bins Location Marunda</span>
+                            </div>
+                            <p id="modal-bins-location" class="text-base font-extrabold text-slate-800 dark:text-white font-mono"></p>
+                        </div>
+                    </div>
+
+                    <!-- Warehouse Routing Helper -->
+                    <div class="bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-100/30 dark:border-blue-900/20 flex gap-3.5">
+                        <i class="fa-solid fa-map-location-dot text-blue-500 dark:text-blue-400 text-xl mt-0.5"></i>
+                        <div>
+                            <h5 class="text-sm font-bold text-slate-800 dark:text-white">Petunjuk Arah & Ambil Barang</h5>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                Silakan menuju koridor gudang yang sesuai. Cari label tanda Bins Location Marunda pada rak di zona yang ditentukan. Selalu cocokkan serial produk dengan data terdaftar sebelum pengambilan.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer Controls -->
+            <div class="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row gap-3">
+                <button onclick="shareProduct()" class="flex-1 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center space-x-2 text-sm shadow-sm">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Salin Detail Produk</span>
+                </button>
+                <a id="modal-open-drive" href="#" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center space-x-2 text-sm shadow-md shadow-blue-500/10">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span>Buka Drive Asli</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <script>
+        // Spreadsheets Details
+        const SPREADSHEET_ID = '1amheHpP8fTXavBlnAFa_xduAgAP36oottJN7sHXwUsg';
+        const GID = '1792945881';
+        const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID}`;
+
+        // Variables & States
+        let originalData = [];
+        let filteredData = [];
+        let activeProduct = null;
+        let currentLayout = 'grid'; // Grid or List
+        
+        // Registry to store custom user-entered Bahasa Mekanik values dynamically during session
+        const customBahasaMekanikRegistry = {};
+
+        // Custom High-Quality Mock Data with Standard Column Structure for Fallbacks
+        const mockCatalogData = [
+            {
+                "warehouse": "Marunda Depot A",
+                "name": "Baut & Mur Baja Stainless Hexagonal M10",
+                "location": "A-12-R4",
+                "picture": "https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=500&auto=format&fit=crop&q=60"
+            },
+            {
+                "warehouse": "Warehouse Surabaya",
+                "name": "Kabel Tembaga Shielded NYY 3x4mm",
+                "location": "B-03-R2",
+                "picture": "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=500&auto=format&fit=crop&q=60"
+            },
+            {
+                "warehouse": "Marunda Depot B",
+                "name": "Pompa Air Sentrifugal 220V",
+                "location": "C-01-R5",
+                "picture": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=60"
+            },
+            {
+                "warehouse": "Cikarang Distribution Center",
+                "name": "Oli Industri Pelumas Mesin Hidrolik 20L",
+                "location": "E-08-R1",
+                "picture": "https://images.unsplash.com/photo-1531058020387-3be344559be6?w=500&auto=format&fit=crop&q=60"
+            },
+            {
+                "warehouse": "Marunda Depot A",
+                "name": "Pipa Besi Galvanis 2 Inch Schedule 40",
+                "location": "F-14-R3",
+                "picture": "https://images.unsplash.com/photo-1617155093730-a8bf47be792d?w=500&auto=format&fit=crop&q=60"
+            },
+            {
+                "warehouse": "Warehouse Medan",
+                "name": "BMS Bracket Logam Mounting Heavy Duty",
+                "location": "A-02-R1",
+                "picture": ""
+            }
+        ];
+
+        window.onload = function() {
+            initApp();
+        };
+
+        function initApp() {
+            // Setup Event Listeners
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+            document.getElementById('initials-input').addEventListener('input', applyFilters);
+            document.getElementById('warehouse-filter').addEventListener('change', applyFilters);
+            
+            // Check for system preference or localStorage dark mode
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            // Sync Data
+            fetchDataFromSheet();
+        }
+
+        // Auto generation of clean initials from product name words to act as default Bahasa Mekanik
+        function generateDefaultBahasaMekanik(name) {
+            if (!name) return 'PR';
+            const clean = name.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+            const words = clean.split(/\s+/).filter(w => w.length > 0);
+            
+            if (words.length === 1) {
+                return words[0].substring(0, 3).toUpperCase();
+            }
+            
+            return words.map(w => w[0].toUpperCase()).join('').substring(0, 4);
+        }
+
+        function convertDriveUrlToDirect(url) {
+            if (!url) return '';
+            url = url.trim();
+
+            // Match Google Sheets IMAGE formula wrapper, if any: =IMAGE("https://drive.google.com/...")
+            const formulaMatch = url.match(/=IMAGE\s*\(\s*["']([^"']+)["']\s*\)/i);
+            if (formulaMatch && formulaMatch[1]) {
+                url = formulaMatch[1].trim();
+            }
+
+            let fileId = '';
+            
+            // Pattern 1: /file/d/{FILE_ID}/view or /edit etc.
+            const driveDMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (driveDMatch && driveDMatch[1]) {
+                fileId = driveDMatch[1];
+            } else {
+                // Pattern 2: ?id={FILE_ID} or &id={FILE_ID}
+                const driveIdMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (driveIdMatch && driveIdMatch[1]) {
+                    fileId = driveIdMatch[1];
+                }
+            }
+
+            if (fileId) {
+                // Returning Google's high-speed public host image url for seamless image element mounting
+                return `https://lh3.googleusercontent.com/d/${fileId}`;
+            }
+
+            return url;
+        }
+
+        function fetchDataFromSheet() {
+            setLoadingState(true);
+            
+            fetch(GOOGLE_SHEET_CSV_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Gagal mengakses tautan spreadsheet');
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            processSheetData(results.data);
+                        },
+                        error: function(err) {
+                            console.error('PapaParse Error:', err);
+                            showErrorState();
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    showErrorState();
+                });
+        }
+
+        function processSheetData(rawRows) {
+            if (!rawRows || rawRows.length === 0) {
+                showErrorState();
+                return;
+            }
+
+            try {
+                const keys = Object.keys(rawRows[0]);
+                console.log("Spreadsheet Header Columns:", keys);
+
+                // Fuzzy-matching keys to be safe with capitalization and extra spaces
+                const keyWarehouse = findBestMatchKey(keys, 'Warehouse') || keys[0];
+                const keyProduct = findBestMatchKey(keys, 'Purchase Product Pdt') || findBestMatchKey(keys, 'Purchase Product') || keys[1];
+                const keyLocation = findBestMatchKey(keys, 'Bins Location Marunda Pdt') || findBestMatchKey(keys, 'Bins Location Marunda') || keys[2];
+                
+                // Fetch Column G as the standard Picture (index 6 in 0-based column count)
+                // If Column G name changes, we can fallback to index 6
+                const keyPictureColG = keys[6] || findBestMatchKey(keys, 'SPLIT FOTO 1') || keys[3];
+
+                originalData = rawRows.map(row => {
+                    const productName = (row[keyProduct] || '').trim();
+                    const defaultMekanik = generateDefaultBahasaMekanik(productName);
+                    
+                    // Retrieve custom user-entered Bahasa Mekanik if existed previously, else fallback to initials
+                    const resolvedBahasaMekanik = customBahasaMekanikRegistry[productName] || defaultMekanik;
+                    
+                    let rawPictureUrl = (row[keyPictureColG] || '').trim();
+                    
+                    // Fallback to SPLIT FOTO 1 if Column G returned blank
+                    if (!rawPictureUrl) {
+                        const colSplitKey = findBestMatchKey(keys, 'SPLIT FOTO 1');
+                        if (colSplitKey && row[colSplitKey]) {
+                            rawPictureUrl = row[colSplitKey].trim();
+                        }
+                    }
+
+                    // Process Drive converter link
+                    const finalPicture = convertDriveUrlToDirect(rawPictureUrl);
+
+                    return {
+                        warehouse: (row[keyWarehouse] || '').trim(),
+                        name: productName,
+                        location: (row[keyLocation] || '').trim(),
+                        picture: finalPicture,
+                        rawPicture: rawPictureUrl, 
+                        bahasaMekanik: resolvedBahasaMekanik,
+                        defaultMekanik: defaultMekanik
+                    };
+                }).filter(item => item.name);
+
+                if (originalData.length === 0) {
+                    showErrorState();
+                    return;
+                }
+
+                setLoadingState(false);
+                buildWarehouseDropdown();
+                updateStats();
+                applyFilters();
+                showToast('Koneksi Sukses', 'Katalog berhasil terhubung langsung dengan Google Drive & Sheets!', 'success');
+            } catch (err) {
+                console.error("Data mapping error:", err);
+                showErrorState();
+            }
+        }
+
+        function findBestMatchKey(keys, targetName) {
+            const normalizedTarget = targetName.toLowerCase().replace(/[\s_]/g, '');
+            let bestMatch = keys.find(k => k.toLowerCase().replace(/[\s_]/g, '') === normalizedTarget);
+            
+            if (!bestMatch) {
+                bestMatch = keys.find(k => k.toLowerCase().includes(normalizedTarget) || normalizedTarget.includes(k.toLowerCase()));
+            }
+            return bestMatch;
+        }
+
+        function setLoadingState(isLoading) {
+            const skeleton = document.getElementById('skeleton-loader');
+            const container = document.getElementById('product-container');
+            const errorArea = document.getElementById('error-state');
+            const emptyArea = document.getElementById('empty-state');
+            const refreshIcon = document.getElementById('refresh-icon');
+
+            if (isLoading) {
+                skeleton.classList.remove('hidden');
+                container.classList.add('hidden');
+                errorArea.classList.add('hidden');
+                emptyArea.classList.add('hidden');
+                refreshIcon.classList.add('animate-spin');
+            } else {
+                skeleton.classList.add('hidden');
+                container.classList.remove('hidden');
+                refreshIcon.classList.remove('animate-spin');
+            }
+        }
+
+        function showErrorState() {
+            setLoadingState(false);
+            document.getElementById('product-container').classList.add('hidden');
+            document.getElementById('error-state').classList.remove('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+            showToast('Koneksi Gagal', 'Gagal memuat spreadsheet. Mengaktifkan Mode Demo.', 'warning');
+            loadMockData();
+        }
+
+        function loadMockData() {
+            originalData = mockCatalogData.map(item => {
+                const defaultMekanik = generateDefaultBahasaMekanik(item.name);
+                return {
+                    ...item,
+                    rawPicture: item.picture,
+                    bahasaMekanik: customBahasaMekanikRegistry[item.name] || defaultMekanik,
+                    defaultMekanik: defaultMekanik
+                };
+            });
+            setLoadingState(false);
+            buildWarehouseDropdown();
+            updateStats();
+            applyFilters();
+            showToast('Demo Aktif', 'Data simulasi diaktifkan secara fungsional.', 'info');
+        }
+
+        function buildWarehouseDropdown() {
+            const dropdown = document.getElementById('warehouse-filter');
+            const warehouses = [...new Set(originalData.map(item => item.warehouse))].filter(w => w !== "").sort();
+            
+            dropdown.innerHTML = '<option value="">Semua Warehouse</option>';
+            warehouses.forEach(wh => {
+                const opt = document.createElement('option');
+                opt.value = wh;
+                opt.textContent = wh;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').textContent = originalData.length;
+            
+            const uniqueWh = [...new Set(originalData.map(item => item.warehouse).filter(b => b))].length;
+            document.getElementById('stat-warehouses').textContent = uniqueWh;
+            
+            const uniqueBins = [...new Set(originalData.map(item => item.location).filter(b => b))].length;
+            document.getElementById('stat-bins').textContent = uniqueBins;
+
+            const countWithImages = originalData.filter(item => item.picture && item.picture.startsWith('http')).length;
+            document.getElementById('stat-images').textContent = countWithImages;
+        }
+
+        function applyFilters() {
+            const textQuery = document.getElementById('search-input').value.toLowerCase().trim();
+            const initialsQuery = document.getElementById('initials-input').value.toUpperCase().trim();
+            const selectedWarehouse = document.getElementById('warehouse-filter').value;
+
+            filteredData = originalData.filter(item => {
+                // Text search matching product name, location, or warehouse
+                const matchesText = !textQuery || 
+                    item.name.toLowerCase().includes(textQuery) ||
+                    item.warehouse.toLowerCase().includes(textQuery) ||
+                    item.location.toLowerCase().includes(textQuery);
+                
+                // Bahasa Mekanik search matching
+                const matchesInitials = !initialsQuery || item.bahasaMekanik.toUpperCase().includes(initialsQuery);
+                
+                // Warehouse selector matching
+                const matchesWarehouse = !selectedWarehouse || item.warehouse === selectedWarehouse;
+                
+                return matchesText && matchesInitials && matchesWarehouse;
+            });
+
+            renderProducts();
+        }
+
+        function resetFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('initials-input').value = '';
+            document.getElementById('warehouse-filter').value = '';
+            applyFilters();
+            showToast('Reset Filter', 'Semua kriteria pencarian telah dikosongkan.', 'info');
+        }
+
+        function setLayout(layout) {
+            currentLayout = layout;
+            
+            const gridBtn = document.getElementById('grid-view-btn');
+            const listBtn = document.getElementById('list-view-btn');
+            const container = document.getElementById('product-container');
+
+            if (layout === 'grid') {
+                gridBtn.className = "px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400";
+                listBtn.className = "px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+                
+                container.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6";
+            } else {
+                listBtn.className = "px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400";
+                gridBtn.className = "px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+                
+                container.className = "flex flex-col gap-4";
+            }
+
+            renderProducts();
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+
+        function refreshData() {
+            fetchDataFromSheet();
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('product-container');
+            const emptyArea = document.getElementById('empty-state');
+            const countLabel = document.getElementById('items-count');
+
+            container.innerHTML = '';
+            countLabel.textContent = filteredData.length;
+
+            if (filteredData.length === 0) {
+                container.classList.add('hidden');
+                emptyArea.classList.remove('hidden');
+                return;
+            }
+
+            emptyArea.classList.add('hidden');
+            container.classList.remove('hidden');
+
+            filteredData.forEach((product, index) => {
+                const element = document.createElement('div');
+                const hasValidImage = product.picture && (product.picture.startsWith('http') || product.picture.startsWith('https'));
+
+                if (currentLayout === 'grid') {
+                    // GRID CARD VIEW (Visual Focus)
+                    element.className = "group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-500 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer transform hover:-translate-y-1.5";
+                    element.setAttribute('onclick', `openModal(${index})`);
+
+                    const imageSection = hasValidImage 
+                        ? `<div class="relative aspect-square bg-slate-50 dark:bg-slate-950 overflow-hidden flex items-center justify-center p-3 border-b border-slate-50 dark:border-slate-800 img-grid-bg">
+                                <img 
+                                    src="${product.picture}" 
+                                    alt="${product.name}" 
+                                    class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500"
+                                    loading="lazy"
+                                    onerror="this.style.display='none'; document.getElementById('placeholder-${index}').classList.remove('hidden');"
+                                >
+                                <div id="placeholder-${index}" class="hidden absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-850 dark:to-slate-950 flex flex-col items-center justify-center text-center p-4">
+                                    <span class="text-4xl font-black text-blue-500/80 font-mono tracking-wider">${product.bahasaMekanik}</span>
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-2">Gambar Tidak Tersedia</span>
+                                </div>
+                                <span class="absolute top-3 left-3 bg-slate-900/80 dark:bg-slate-800/90 backdrop-blur-md text-[9px] text-white font-extrabold uppercase tracking-widest px-2.5 py-1.5 rounded-lg shadow-sm border border-slate-700/30">
+                                    ${product.warehouse || 'Gudang'}
+                                </span>
+                           </div>`
+                        : `<div class="relative aspect-square bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800/50 dark:to-slate-950 overflow-hidden flex flex-col items-center justify-center text-center p-4 border-b border-slate-50 dark:border-slate-800 img-grid-bg">
+                                <span class="text-4xl font-black text-blue-500/80 font-mono tracking-wider">${product.bahasaMekanik}</span>
+                                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-2">Gambar Tidak Tersedia</span>
+                                <span class="absolute top-3 left-3 bg-slate-900/80 dark:bg-slate-800/90 backdrop-blur-md text-[9px] text-white font-extrabold uppercase tracking-widest px-2.5 py-1.5 rounded-lg shadow-sm border border-slate-700/30">
+                                    ${product.warehouse || 'Gudang'}
+                                </span>
+                           </div>`;
+
+                    element.innerHTML = `
+                        ${imageSection}
+                        <div class="p-4 flex-grow flex flex-col justify-between space-y-4">
+                            <div>
+                                <div class="flex items-center space-x-1.5 mb-2">
+                                    <span class="bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-400 text-[10px] font-extrabold px-2 py-0.5 rounded-md font-mono">
+                                        MEKANIK: ${product.bahasaMekanik}
+                                    </span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 line-clamp-2 leading-tight">
+                                    ${product.name}
+                                </h4>
+                            </div>
+                            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                                <span class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[9px]">Bins Location Marunda</span>
+                                <span class="bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 font-extrabold px-2.5 py-1 rounded-lg border border-emerald-100 dark:border-emerald-900/30 font-mono text-xs shadow-sm">
+                                    <i class="fa-solid fa-location-dot mr-1"></i>${product.location || 'NONE'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // LIST CARD VIEW (Fast Data Focus)
+                    element.className = "group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-500 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-stretch cursor-pointer";
+                    element.setAttribute('onclick', `openModal(${index})`);
+
+                    const imageSectionList = hasValidImage
+                        ? `<div class="relative w-full sm:w-24 h-24 bg-slate-50 dark:bg-slate-950 flex-shrink-0 flex items-center justify-center p-2 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 img-grid-bg">
+                                <img 
+                                    src="${product.picture}" 
+                                    alt="${product.name}" 
+                                    class="object-contain w-full h-full"
+                                    loading="lazy"
+                                    onerror="this.style.display='none'; document.getElementById('placeholder-list-${index}').classList.remove('hidden');"
+                                >
+                                <div id="placeholder-list-${index}" class="hidden absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-850 dark:to-slate-950 flex flex-col items-center justify-center text-center p-1">
+                                    <span class="text-xl font-bold text-blue-500/80 font-mono">${product.bahasaMekanik}</span>
+                                </div>
+                           </div>`
+                        : `<div class="relative w-full sm:w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800/50 dark:to-slate-950 flex-shrink-0 flex flex-col items-center justify-center text-center p-2 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 img-grid-bg">
+                                <span class="text-xl font-bold text-blue-500/80 font-mono">${product.bahasaMekanik}</span>
+                           </div>`;
+
+                    element.innerHTML = `
+                        ${imageSectionList}
+                        <div class="p-4 flex-grow flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="space-y-1">
+                                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                                    <span class="bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-400 text-[9px] font-extrabold px-1.5 py-0.5 rounded font-mono uppercase">
+                                        Mekanik: ${product.bahasaMekanik}
+                                    </span>
+                                    <span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                        ${product.warehouse || 'Gudang Utama'}
+                                    </span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 leading-tight">
+                                    ${product.name}
+                                </h4>
+                            </div>
+                            
+                            <div class="flex items-center space-x-4 self-end sm:self-center">
+                                <div class="text-right hidden md:block">
+                                    <p class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Bins Location Marunda</p>
+                                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200">${product.location || 'N/A'}</p>
+                                </div>
+                                <span class="bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 font-extrabold px-3 py-2 rounded-xl border border-emerald-100 dark:border-emerald-900/30 font-mono text-xs shadow-sm">
+                                    <i class="fa-solid fa-location-dot mr-1"></i>${product.location || 'NONE'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                container.appendChild(element);
+            });
+        }
+
+        function openModal(index) {
+            const product = filteredData[index];
+            if (!product) return;
+
+            activeProduct = product;
+
+            // Reset lock button and input to LOCKED state on modal open
+            const input = document.getElementById('modal-bahasa-mekanik-input');
+            const icon = document.getElementById('lock-icon');
+            const btn = document.getElementById('lock-btn');
+            const text = document.getElementById('lock-text');
+
+            input.value = product.bahasaMekanik || '';
+            input.setAttribute('disabled', 'true');
+            icon.className = 'fa-solid fa-lock text-sm';
+            text.textContent = 'Kunci Aktif';
+            btn.className = "bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 p-3 rounded-xl transition duration-200 flex items-center justify-center gap-2 font-bold text-xs shadow-sm border border-blue-100/30 dark:border-blue-900/30 w-full sm:w-auto px-4";
+
+            const modalImageContainer = document.getElementById('modal-image-container');
+            const hasValidImage = product.picture && (product.picture.startsWith('http') || product.picture.startsWith('https'));
+
+            // Render customized image display in Modal
+            if (hasValidImage) {
+                modalImageContainer.innerHTML = `
+                    <img id="modal-image" src="${product.picture}" alt="${product.name}" class="object-contain w-full h-full p-4 hover:scale-[1.15] transition-transform duration-300 cursor-zoom-in" onclick="zoomImageToggle(this)" title="Klik untuk Zoom">
+                    <div id="modal-placeholder" class="hidden absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-850 dark:to-slate-950 flex flex-col items-center justify-center text-center p-6">
+                        <span class="text-6xl font-black text-blue-500/80 font-mono tracking-widest">${product.bahasaMekanik}</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500 font-bold mt-2 uppercase tracking-wide">Gambar Tidak Tersedia</span>
+                    </div>
+                `;
+            } else {
+                modalImageContainer.innerHTML = `
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800/40 dark:to-slate-950 flex flex-col items-center justify-center text-center p-6">
+                        <span class="text-7xl font-black text-blue-500/80 font-mono tracking-widest">${product.bahasaMekanik}</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500 font-bold mt-2 uppercase tracking-wide">Gambar Tidak Tersedia</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('modal-product-title').textContent = product.name;
+            document.getElementById('modal-warehouse').textContent = product.warehouse || 'Gudang Utama';
+            document.getElementById('modal-bins-location').textContent = product.location || 'Tidak Terdaftar';
+
+            // Set drive redirect link safely
+            const driveBtn = document.getElementById('modal-open-drive');
+            if (product.rawPicture && product.rawPicture.startsWith('http')) {
+                driveBtn.href = product.rawPicture;
+                driveBtn.classList.remove('pointer-events-none', 'opacity-50');
+            } else {
+                driveBtn.href = '#';
+                driveBtn.classList.add('pointer-events-none', 'opacity-50');
+            }
+
+            const modal = document.getElementById('product-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.firstElementChild.classList.remove('scale-95');
+                modal.firstElementChild.classList.add('scale-100');
+            }, 50);
+        }
+
+        function toggleLockBahasaMekanik() {
+            const input = document.getElementById('modal-bahasa-mekanik-input');
+            const icon = document.getElementById('lock-icon');
+            const btn = document.getElementById('lock-btn');
+            const text = document.getElementById('lock-text');
+
+            const isLocked = input.hasAttribute('disabled');
+
+            if (isLocked) {
+                // UNLOCK state (allow editing)
+                input.removeAttribute('disabled');
+                input.focus();
+                icon.className = 'fa-solid fa-lock-open text-sm';
+                text.textContent = 'Buka Gembok';
+                btn.className = "bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-600 dark:text-amber-400 p-3 rounded-xl transition duration-200 flex items-center justify-center gap-2 font-bold text-xs shadow-sm border border-amber-100/30 dark:border-amber-900/30 w-full sm:w-auto px-4 ring-2 ring-amber-400/50";
+                showToast('Gembok Terbuka', 'Bahasa Mekanik sekarang dapat disesuaikan.', 'warning');
+            } else {
+                // LOCK state (save changes & protect)
+                input.setAttribute('disabled', 'true');
+                icon.className = 'fa-solid fa-lock text-sm';
+                text.textContent = 'Kunci Aktif';
+                btn.className = "bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 p-3 rounded-xl transition duration-200 flex items-center justify-center gap-2 font-bold text-xs shadow-sm border border-blue-100/30 dark:border-blue-900/30 w-full sm:w-auto px-4";
+
+                const newValue = input.value.trim().toUpperCase();
+                if (activeProduct) {
+                    customBahasaMekanikRegistry[activeProduct.name] = newValue;
+                    activeProduct.bahasaMekanik = newValue;
+
+                    // Sync inside original data state
+                    const originalItem = originalData.find(item => item.name === activeProduct.name);
+                    if (originalItem) {
+                        originalItem.bahasaMekanik = newValue;
+                    }
+
+                    applyFilters();
+                    showToast('Tersimpan', `Bahasa Mekanik diubah ke "${newValue}".`, 'success');
+                }
+            }
+        }
+
+        function zoomImageToggle(imgElement) {
+            imgElement.classList.toggle('object-contain');
+            imgElement.classList.toggle('object-cover');
+        }
+
+        function closeModal() {
+            // Guard: Automatically lock and save changes if user closes modal without clicking lock button
+            const input = document.getElementById('modal-bahasa-mekanik-input');
+            if (input && !input.hasAttribute('disabled')) {
+                toggleLockBahasaMekanik();
+            }
+
+            const modal = document.getElementById('product-modal');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                activeProduct = null;
+            }, 150);
+        }
+
+        function closeModalOnBgClick(event) {
+            if (event.target.id === 'product-modal') {
+                closeModal();
+            }
+        }
+
+        function shareProduct() {
+            if (!activeProduct) return;
+
+            const textToCopy = `📦 DETAIL PRODUK:\n• Purchase Product: ${activeProduct.name}\n• Bahasa Mekanik: ${activeProduct.bahasaMekanik}\n• Warehouse: ${activeProduct.warehouse || '-'}\n• Bins Location Marunda: ${activeProduct.location || '-'}\n• Link File G-Drive: ${activeProduct.rawPicture || 'Tidak ada'}`;
+            
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('Disalin!', 'Informasi produk telah disalin ke clipboard.', 'success');
+                } else {
+                    showToast('Gagal', 'Tidak dapat menyalin data produk.', 'warning');
+                }
+            } catch (err) {
+                showToast('Gagal', 'Terjadi kesalahan sistem saat menyalin.', 'warning');
+            }
+            
+            document.body.removeChild(tempTextArea);
+        }
+
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            
+            let typeClasses = 'bg-slate-900 border-slate-800 dark:bg-slate-950 text-white';
+            let iconCode = '<i class="fa-solid fa-info-circle text-blue-400"></i>';
+            
+            if (type === 'success') {
+                typeClasses = 'bg-emerald-950 dark:bg-slate-900 border-emerald-800 text-emerald-100';
+                iconCode = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+            } else if (type === 'warning') {
+                typeClasses = 'bg-amber-950 dark:bg-slate-900 border-amber-800 text-amber-100';
+                iconCode = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i>';
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-2xl border flex items-start space-x-3 shadow-2xl transition-all duration-300 opacity-0 translate-y-3 pointer-events-auto max-w-sm w-full ${typeClasses}`;
+            toast.innerHTML = `
+                <div class="text-lg mt-0.5">${iconCode}</div>
+                <div class="flex-grow">
+                    <h5 class="font-bold text-xs uppercase tracking-wide">${title}</h5>
+                    <p class="text-xs text-slate-300 dark:text-slate-400 mt-1 leading-relaxed">${message}</p>
+                </div>
+                <button class="text-slate-400 hover:text-white transition-colors" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-3');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-3');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4500);
+        }
+    </script>
+</body>
+</html>
